@@ -4,6 +4,7 @@
 ## Notes: Tracks every timed weapon buff - shaman imbues, oils, stones, poisons - with timers, reminders and one-click reapply, and shares it with your party so shamans can see who is getting Windfury.
 ## Author: Purrdee
 ## X-License: MIT
+## X-Wago-ID: qGYBDpNg
 ## IconTexture: Interface\AddOns\AKForeverWeaponBuffs\icon
 ## SavedVariables: AKForeverWeaponBuffsDB
 ## OptionalDeps: AKForeverWeaponBuffs_SavedState
