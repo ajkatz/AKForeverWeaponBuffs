@@ -1,0 +1,20 @@
+## Interface: 16001
+## Version: @project-version@
+## Title: AKForeverWeaponBuffs
+## Notes: Tracks every timed weapon buff - shaman imbues, oils, stones, poisons - with timers, reminders and one-click reapply, and shares it with your party so shamans can see who is getting Windfury.
+## Author: Purrdee
+## X-License: MIT
+## IconTexture: Interface\AddOns\AKForeverWeaponBuffs\icon
+## SavedVariables: AKForeverWeaponBuffsDB
+## OptionalDeps: AKForeverWeaponBuffs_SavedState
+
+Core.lua
+Enchants.lua
+Sources.lua
+Tracker.lua
+Comms.lua
+UI\PlayerFrame.lua
+UI\Picker.lua
+UI\PartyPanel.lua
+Shaman.lua
+Diagnostics.lua
