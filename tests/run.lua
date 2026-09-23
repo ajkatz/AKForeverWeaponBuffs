@@ -193,6 +193,75 @@ scenario("shaman imbue: learned from the cast, tracked, reapply wired, reminders
     equal(AKForeverWeaponBuffsFixButton:GetAttribute("spell"), "Windfury Weapon")
 end)
 
+scenario("a fishing lure: its enchant never names the lure, and it is learned anyway", function()
+    local LURE_ITEM, LURE_SPELL = 6529, 6532 -- Shiny Bauble
+    local ns, state = start({ class = "MAGE" }, function(s)
+        s.equipment[16] = AXE_1H
+        s.items[LURE_ITEM] = { name = "Shiny Bauble", icon = 134330, spellID = LURE_SPELL, count = 5 }
+        s.spells[LURE_SPELL] = { name = "Shiny Bauble", icon = 134330, known = false }
+        s.bags = { LURE_ITEM }
+    end)
+    Mock.fire("BAG_UPDATE_DELAYED")
+    check(not ns.Sources.NamesOverlap("Shiny Bauble", "Fishing Lure"), "the names have nothing in common")
+
+    Mock.cast(LURE_SPELL)
+    state.tooltips[16] = { "Fishing Pole", "Fishing Lure (10 min)" }
+    Mock.setEnchants(0, { enchant(TEMP, 2506, 600, 134330) })
+    Mock.advance(0.5)
+
+    local source = ns.db.sources[2506]
+    check(source, "the lure was tracked but never learned - the fix button had nothing to offer")
+    equal(source.kind, "item"); equal(source.key, "item:" .. LURE_ITEM)
+    equal(source.how, "the buff wears its icon")
+    equal(ns.db.enchantNames[2506], "Fishing Lure", "and the enchant's own name is kept")
+    equal(AKForeverWeaponBuffsFixButton:GetAttribute("type"), "item")
+    equal(AKForeverWeaponBuffsFixButton:GetAttribute("item"), "item:" .. LURE_ITEM)
+    equal(AKForeverWeaponBuffsFixButton:GetAttribute("target-slot"), 16)
+end)
+
+scenario("two things used at once: the icon says which one landed", function()
+    local ns, state = start({ class = "MAGE" }, function(s)
+        s.equipment[16] = AXE_1H
+        s.items[6529] = { name = "Shiny Bauble", icon = 134330, spellID = 6532, count = 5 }
+        s.spells[6532] = { name = "Shiny Bauble", icon = 134330, known = false }
+        s.bags = { 6529, OIL_ITEM }
+    end)
+    Mock.fire("BAG_UPDATE_DELAYED")
+    Mock.cast(OIL_SPELL) -- the oil went on the other hand; the bauble went on the pole
+    Mock.cast(6532)
+    state.tooltips[16] = { "Fishing Pole", "Fishing Lure (10 min)" }
+    Mock.setEnchants(0, { enchant(TEMP, 2506, 600, 134330) })
+    Mock.advance(0.5)
+    equal(ns.db.sources[2506].key, "item:6529", "the oil's icon is not the one on the buff")
+end)
+
+scenario("a buff the client gives no icon for is still not guessed at", function()
+    -- the client says 0, not nil, when there is no icon - and 0 is truthy in Lua
+    local ns, state = start({ class = "MAGE" }, function(s)
+        s.equipment[16] = AXE_1H
+        s.items[6529] = { name = "Shiny Bauble", icon = 134330, spellID = 6532, count = 5 }
+        s.spells[6532] = { name = "Shiny Bauble", icon = 134330, known = false }
+        s.bags = { 6529 }
+    end)
+    Mock.fire("BAG_UPDATE_DELAYED")
+    Mock.cast(6532)
+    state.tooltips[16] = { "Fishing Pole", "Fishing Lure (10 min)" }
+    Mock.setEnchants(0, { enchant(TEMP, 2506, 600, 0) })
+    Mock.advance(0.5)
+    equal(ns.db.sources[2506], nil, "nothing to go on: neither the name nor an icon")
+    equal(ns.db.enchantNames[2506], "Fishing Lure", "but the display name is still kept")
+    equal(rowByKey(ns, "MH:TEMPORARY").icon, nil, "and no row wears icon number zero")
+
+    -- an older client that says nothing at all is no different
+    local silent = enchant(TEMP, 2506, 600, 134330)
+    silent.enchantIconID = nil
+    Mock.setEnchants(0, {})
+    Mock.advance(1)
+    Mock.setEnchants(0, { silent })
+    Mock.advance(0.5)
+    equal(ns.db.sources[2506], nil)
+end)
+
 scenario("consumable: learned as an item and applied to the right weapon slot", function()
     local ns, state = start({ class = "MAGE" }, function(s)
         s.equipment[16] = AXE_1H

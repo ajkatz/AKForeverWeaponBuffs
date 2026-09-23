@@ -4,9 +4,13 @@
 --   * an item use-spell that belongs to something in the bags  -> item source
 --   * a spell from the spellbook                               -> spell source
 -- and only accept the pairing when the enchant's tooltip name agrees with the
--- candidate's name ("Windfury Weapon" ~ "Windfury 4"). Short lived enchants
--- (totem pulses such as Windfury Totem) are never learned: they are "pulsed",
--- which is also what the party panel uses to show who is getting Windfury.
+-- candidate's name ("Windfury Weapon" ~ "Windfury 4") - or, failing that, when
+-- the buff wears that candidate's own icon. A fishing lure needs the second way:
+-- the enchant it leaves calls itself "Fishing Lure" and never once mentions the
+-- Shiny Bauble that made it, but it does carry the bauble's icon.
+-- Short lived enchants (totem pulses such as Windfury Totem) are never
+-- learned: they are "pulsed", which is also what the party panel uses to show
+-- who is getting Windfury.
 local _, ns = ...
 
 local Sources = {}
@@ -279,7 +283,7 @@ local function unclaimedLines(entry, lines)
     return unclaimed
 end
 
-local function learn(entry, candidate)
+local function learn(entry, candidate, how)
     local name = candidate.name
     local source = {
         kind = candidate.kind,
@@ -289,11 +293,26 @@ local function learn(entry, candidate)
         typeKey = entry.typeKey,
         icon = entry.iconID,
         key = candidate.kind == "item" and ("item:" .. candidate.itemID) or ("spell:" .. name),
+        how = how,
     }
     ns.db.sources[entry.enchantID] = source
-    ns:Log("source_learned", { id = entry.enchantID, key = source.key, row = entry.rowKey })
+    ns:Log("source_learned", { id = entry.enchantID, key = source.key, row = entry.rowKey, how = how })
     ns:Fire("SOURCES_CHANGED")
     return source
+end
+
+-- The icon the client hands us with the buff is the icon of the thing that made it: that is how a fishing
+-- lure gives itself away, since its name never will.
+local function iconOf(candidate)
+    local icon
+    if candidate.kind == "item" then
+        icon = C_Item.GetItemIconByID and C_Item.GetItemIconByID(candidate.itemID)
+    else
+        icon = C_Spell.GetSpellTexture and C_Spell.GetSpellTexture(candidate.spellID)
+    end
+    if icon and not ns.IsSecret(icon) then
+        return icon
+    end
 end
 
 local function attribute(entry, appliedAt, inCombatAtApply)
@@ -306,11 +325,11 @@ local function attribute(entry, appliedAt, inCombatAtApply)
     local candidates = candidatesAround(appliedAt)
 
     -- 1) a candidate whose name agrees with a tooltip line
-    local chosen, tooltipName
+    local chosen, tooltipName, how
     for _, line in ipairs(lines) do
         for _, candidate in ipairs(candidates) do
             if Sources.NamesOverlap(line.name, candidate.name) or Sources.NamesOverlap(line.name, candidate.altName) then
-                chosen, tooltipName = candidate, line.name
+                chosen, tooltipName, how = candidate, line.name, "the names agree"
                 break
             end
         end
@@ -325,7 +344,20 @@ local function attribute(entry, appliedAt, inCombatAtApply)
     -- 2) no tooltip to check against: only trust quiet, out of combat moments,
     --    where nothing but the player's own cast puts a long buff on a weapon
     if not chosen and #lines == 0 and not inCombatAtApply then
-        chosen = candidates[1] -- most recent cast
+        chosen, how = candidates[1], "nothing else put a buff on that weapon" -- most recent cast
+    end
+
+    -- 3) the names do not agree and never will - a fishing lure leaves "Fishing Lure (10 min)" on the pole
+    --    and says nothing about the Shiny Bauble that made it. The icon does: the buff wears the icon of
+    --    whatever made it, so an icon matching something used a moment ago settles it. (A potion drunk as
+    --    a poison lands has neither the name nor the icon, and is still left alone.)
+    if not chosen and entry.iconID and not ns.IsSecret(entry.iconID) then
+        for _, candidate in ipairs(candidates) do -- most recent first
+            if iconOf(candidate) == entry.iconID then
+                chosen, how = candidate, "the buff wears its icon"
+                break
+            end
+        end
     end
 
     if tooltipName and not ns.db.enchantNames[enchantID] then
@@ -334,10 +366,10 @@ local function attribute(entry, appliedAt, inCombatAtApply)
     end
 
     if chosen then
-        local source = learn(entry, chosen)
+        local source = learn(entry, chosen, how)
         ns:Fire("SOURCE_APPLIED", entry.rowKey, source)
     else
-        ns:Log("source_unknown", { id = enchantID, row = entry.rowKey, candidates = #candidates, lines = #lines })
+        ns:Log("source_unknown", { id = enchantID, row = entry.rowKey, candidates = #candidates, lines = #lines, icon = entry.iconID })
     end
 end
 

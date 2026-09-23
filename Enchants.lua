@@ -99,7 +99,8 @@ local function readModern(now)
                     end
                     if info.hasEnchant then
                         local iconID = info.enchantIconID
-                        if ns.IsSecret(iconID) then
+                        -- 0 is this client's way of saying "no icon", and 0 is truthy in Lua
+                        if ns.IsSecret(iconID) or iconID == 0 then
                             iconID = nil
                         end
                         local charges = info.charges
