@@ -1,5 +1,12 @@
 # AKForeverWeaponBuffs
 
+## 2.1.1
+
+- Fishing lures are learned and reapplied: the buff is recognised by the icon its enchant wears, since
+  the enchant calls itself "Fishing Lure" and never matches the bauble's name.
+- An enchant the client reports with icon 0 is treated as having no icon (0 is truthy in Lua, so it used
+  to pass every icon check).
+
 ## 2.1.0 - first public release for WoW: Forever
 
 For **World of Warcraft: Forever** (1.60.1, Interface 16001). The successor to SodShamanWeaponBuffs
