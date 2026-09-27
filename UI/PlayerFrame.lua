@@ -479,10 +479,19 @@ end)
 
 ns:RegisterCommand("show", "show the weapon buff frame", function()
     ns:SetOption("shown", true)
+    -- "show" with nothing to track shows nothing, by design - say so, and say what does show it.
+    if not PlayerFrame.hasRows and not ns:GetOption("showWhenEmpty") then
+        ns:Print("shown - but there is nothing on your weapons and nothing tracked for this weapon setup, so it stays out of the way. |cffffd100/wb empty|r shows it anyway (handy for placing it); |cffffd100/wb reset|r brings it to the middle of the screen.")
+    elseif InCombatLockdown() then
+        ns:Print("shown when the fight ends.")
+    else
+        ns:Print("shown. (|cffffd100/wb reset|r if it is off the screen.)")
+    end
 end)
 
 ns:RegisterCommand("hide", "hide the weapon buff frame", function()
     ns:SetOption("shown", false)
+    ns:Print("hidden - |cffffd100/wb show|r brings it back.")
 end)
 
 ns:RegisterCommand("reset", "move the frame back to the middle of the screen", function()
