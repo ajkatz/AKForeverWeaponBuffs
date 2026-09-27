@@ -36,7 +36,8 @@ or unpack a [release zip](https://github.com/ajkatz/AKForeverWeaponBuffs/release
 
 `/wb` lists commands: `show`, `hide`, `reset`, `party`, `comms`, `comms test`, `forget`, `diag`, `debug`.
 
-**Party panel** (`/wb party` toggles it): one row per party member *who has sent data* - members
+**Party panel** (`/wb party` toggles it, and so does the small **x** in the panel's corner, which tells you
+the command that brings it back): one row per party member *who has sent data* - members
 without the addon get no row, and with nobody to show there is no panel. A member who runs the
 addon with nothing on their weapons does get a row ("no weapon buffs": the rogue without poison).
 `/wb party up` makes the panel sit on top of your own frame and grow upwards (first member nearest

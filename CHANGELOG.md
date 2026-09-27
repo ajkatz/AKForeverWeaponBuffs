@@ -1,5 +1,11 @@
 # AKForeverWeaponBuffs
 
+## 2.1.2
+
+- The party panel has a close button: the small x in its corner hides it, with a chat line and a tooltip
+  that name `/wb party`, which brings it back. Until now the command was the only way, and nothing on
+  the panel said so.
+
 ## 2.1.1
 
 - Fishing lures are learned and reapplied: the buff is recognised by the icon its enchant wears, since

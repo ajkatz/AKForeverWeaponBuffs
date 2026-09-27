@@ -809,5 +809,36 @@ scenario("the version: the packager's stamp, a working copy, a release tag", fun
     equal(versionOf("v2.1.0"), "2.1.0", "a release tag: printed as v2.1.0, not vv2.1.0")
 end)
 
+scenario("party panel: the x in its corner hides it and names the command that brings it back", function()
+    local ns = start({ class = "SHAMAN" }, function(s)
+        s.equipment[16] = MACE_2H
+        s.party.party1 = { name = "Bob", class = "WARRIOR" }
+    end)
+    Mock.fire("CHAT_MSG_ADDON", "WeaponBuffs", "U1^M,T,7,1500,135250,1,Wizard Oil", "PARTY", "Bob-TestRealm")
+    ns.PartyPanel:Refresh()
+    equal(AKForeverWeaponBuffsPartyPanel:IsShown(), true)
+    local close = AKForeverWeaponBuffsPartyPanelClose
+    check(close, "a close button on the panel")
+    equal(close:GetParent(), AKForeverWeaponBuffsPartyPanel, "in its corner")
+    local function script(widget, name)
+        return (widget.GetScript and widget:GetScript(name)) or (widget.__scripts and widget.__scripts[name])
+    end
+    script(close, "OnEnter")(close) -- the tooltip says how to bring it back
+    script(close, "OnLeave")(close)
+    script(close, "OnClick")(close)
+    equal(ns:GetOption("partyPanel"), false, "the same option as /wb party")
+    equal(AKForeverWeaponBuffsPartyPanel:IsShown(), false, "hidden")
+    local hinted = false
+    for _, line in ipairs(Mock.printed) do
+        if line:find("/wb party", 1, true) then
+            hinted = true
+        end
+    end
+    check(hinted, "the chat line names the command that brings it back")
+    SlashCmdList.AKFOREVERWEAPONBUFFS("party")
+    equal(ns:GetOption("partyPanel"), true)
+    equal(AKForeverWeaponBuffsPartyPanel:IsShown(), true, "and back it is")
+end)
+
 Mock.realPrint(string.format("\n%d passed, %d failed", passed, #failures))
 os.exit(#failures == 0 and 0 or 1)
