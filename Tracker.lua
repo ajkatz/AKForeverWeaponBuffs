@@ -137,6 +137,13 @@ function Tracker:BuildRows()
         if slot then
             local row = byKey[rowKey]
             if desire.none then
+                -- "Don't track" keeps a greyed row that says so: once the buff has run out, that row is the
+                -- only way back to the picker (a slot that simply vanished looked like a bug, 2026-09-27)
+                if not row and Enchants:IsSlotBuffable(slotKey) then
+                    row = { rowKey = rowKey, slotKey = slotKey, typeKey = typeKey, slot = slot, placeholder = true }
+                    rows[#rows + 1] = row
+                    byKey[rowKey] = row
+                end
                 if row then
                     row.untracked = true
                 end
@@ -165,6 +172,8 @@ function Tracker:BuildRows()
             end
         elseif row.entry then
             row.status = "INFO"
+        elseif row.placeholder then
+            row.status = "UNTRACKED"
         else
             row.status = "MISSING"
         end

@@ -346,6 +346,24 @@ scenario("pinned buff flags a different one as WRONG; auto follows the last appl
     equal(row.status, "INFO"); equal(row.untracked, true)
     ns.Tracker:SetAuto("2H", "MH:IMBUE")
     equal(ns.Tracker:GetDesire("2H", "MH:IMBUE").key, "spell:Rockbiter Weapon", "auto adopts what is on the weapon")
+
+    -- "Don't track", and then the buff runs out: the row stays, greyed, and says so - it is the way back
+    ns.Tracker:SetNone("2H", "MH:IMBUE")
+    Mock.setEnchants(0, {})
+    Mock.advance(0.5)
+    row = rowByKey(ns, "MH:IMBUE")
+    check(row, "the untracked slot keeps a row with nothing on the weapon")
+    equal(row.status, "UNTRACKED"); equal(row.untracked, true); equal(row.placeholder, true)
+    ns.PlayerFrame:Refresh()
+    local frame = ns.PlayerFrame.rowFrames[1]
+    check(frame.text:GetText():find("not tracked", 1, true), "it says so: " .. tostring(frame.text:GetText()))
+    check(math.abs(frame:GetAlpha() - 0.6) < 0.01, "greyed")
+    equal(ns.PlayerFrame.hasRows, false, "but a greyed row alone keeps no frame on the screen")
+    ns.Picker:Toggle(row, "2H", frame.pick)
+    equal(AKForeverWeaponBuffsPicker:IsShown(), true, "and its picker opens")
+    ns.Picker:Close()
+    ns.Tracker:SetAuto("2H", "MH:IMBUE")
+    equal(rowByKey(ns, "MH:IMBUE"), nil, "back on auto with nothing on the weapon and nothing wanted: no row")
 end)
 
 scenario("timer bar spans the buff's real duration, whatever it is", function()

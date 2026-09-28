@@ -22,6 +22,7 @@ local STATUS_COLORS = {
     WRONG = { 0.55, 0.14, 0.14, 0.9 },
     INFO = { 0.30, 0.45, 0.65, 1 },
     KNIFE = { 0.45, 0.45, 0.45, 0.7 },
+    UNTRACKED = { 0.35, 0.35, 0.35, 0.5 },
 }
 local BAR_BACKGROUND = { 0.15, 0.15, 0.15, 0.7 }
 
@@ -277,6 +278,12 @@ local function renderRow(row, data, showSlots)
         timeText = "|cffff6666equip|r"
         icon = data.icon or data.desiredIcon
         desaturate = true
+    elseif data.status == "UNTRACKED" then
+        fraction = 0 -- greyed out, not gone: the picker on this row is the way back
+        text = label .. "not tracked"
+        timeText = ""
+        icon = data.icon or data.desiredIcon
+        desaturate = true
     else
         fraction = math.min(1, data.remaining / data.fullDuration) -- full at application, empty at expiry
         text = label .. (data.name or "Weapon buff")
@@ -321,7 +328,13 @@ function PlayerFrame:Refresh()
         rowFrames[index]:Hide()
     end
     hint:SetShown(#rows == 0)
-    self.hasRows = #rows > 0
+    local tracked = 0 -- rows with something on them or wanted: greyed "not tracked" rows alone keep no frame on the screen
+    for _, data in ipairs(rows) do
+        if not data.placeholder then
+            tracked = tracked + 1
+        end
+    end
+    self.hasRows = tracked > 0
     self:UpdateVisibility()
 
     local rowsHeight = #rows * (ROW_HEIGHT + ROW_GAP) - ROW_GAP

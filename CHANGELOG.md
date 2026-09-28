@@ -5,6 +5,8 @@
 - The party panel has a close button: the small x in its corner hides it, with a chat line and a tooltip
   that name `/wb party`, which brings it back. Until now the command was the only way, and nothing on
   the panel said so.
+- "Don't track" keeps a greyed row that says "not tracked" instead of a slot that vanishes once its buff
+  runs out: that row is the way back to the picker. Greyed rows alone keep no frame on the screen.
 - Rows say what they are: `MH Imbue` for the weapon spell, `MH Oil` (or Stone, Poison, Lure) for what
   was rubbed on. Forever lets a shaman carry both on one weapon, and two rows both labelled "MH" made
   it a guess which picker set which. The picker's title and a line under it name the row the same way.

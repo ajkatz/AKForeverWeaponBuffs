@@ -74,6 +74,8 @@ function implementations.GetAttribute(self, key) return self.__attributes[key] e
 function implementations.Show(self) self.__shown = true end
 function implementations.Hide(self) self.__shown = false end
 function implementations.SetShown(self, shown) self.__shown = shown and true or false end
+function implementations.SetAlpha(self, alpha) self.__alpha = alpha end
+function implementations.GetAlpha(self) return self.__alpha or 1 end
 function implementations.IsShown(self) return self.__shown end
 function implementations.IsVisible(self) return self.__shown end
 function implementations.GetParent(self) return self.__parent end
