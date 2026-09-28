@@ -350,7 +350,7 @@ end)
 
 scenario("timer bar spans the buff's real duration, whatever it is", function()
     local ns, state = start({ class = "SHAMAN" }, function(s) s.equipment[16] = MACE_2H end)
-    local BAR_WIDTH = ns.PlayerFrame.rowFrames[1] and ns.PlayerFrame.rowFrames[1].barBackground:GetWidth() or 200
+    local BAR_WIDTH = ns.PlayerFrame.rowFrames[1] and ns.PlayerFrame.rowFrames[1].barBackground:GetWidth() or 150
     local function barWidth()
         ns.PlayerFrame:Refresh()
         return ns.PlayerFrame.rowFrames[1].bar:GetWidth()
@@ -457,8 +457,10 @@ scenario("the two main-hand rows say what they are - 'MH Imbue' and 'MH Oil' - a
     Mock.advance(0.5)
     local frames = ns.PlayerFrame.rowFrames
     check(frames[1] and frames[2], "two rows drawn")
-    check(frames[1].text:GetText():find("MH Imbue", 1, true), "row 1 reads: " .. tostring(frames[1].text:GetText()))
-    check(frames[2].text:GetText():find("MH Oil", 1, true), "row 2 reads: " .. tostring(frames[2].text:GetText()))
+    check(frames[1].text:GetText():find("Imbue", 1, true), "row 1 reads: " .. tostring(frames[1].text:GetText()))
+    check(frames[2].text:GetText():find("Oil", 1, true), "row 2 reads: " .. tostring(frames[2].text:GetText()))
+    check(not frames[1].text:GetText():find("MH", 1, true), "one hand in play: no hand letters, the rows stay narrow")
+    near(frames[1].barBackground:GetWidth(), 150, 0.01, "the old width")
     equal(ns.Enchants:KindLabel("TEMPORARY", "Instant Poison V"), "Poison")
     equal(ns.Enchants:KindLabel("TEMPORARY", "Sharpened +2"), "Stone")
     equal(ns.Enchants:KindLabel("TEMPORARY", "Fishing Lure +25"), "Lure")
@@ -476,8 +478,14 @@ scenario("the two main-hand rows say what they are - 'MH Imbue' and 'MH Oil' - a
     check(ns.Picker.hint:GetText():find("oil or stone", 1, true), "and the hint says the oil is the other row")
     ns.Picker:Close()
 
-    ns = start({ class = "ROGUE" }, function(s) s.equipment[16] = DAGGER_1H end)
+    ns = start({ class = "ROGUE" }, function(s) s.equipment[16] = DAGGER_1H; s.equipment[17] = DAGGER_1H end)
     equal(ns.Enchants:KindLabel("TEMPORARY", nil), "Poison", "a rogue's unnamed temporary slot is a poison")
+    Mock.setEnchants(0, { enchant(TEMP, 2630, 900) })
+    Mock.setEnchants(1, { enchant(TEMP, 2630, 900) })
+    Mock.advance(0.5)
+    frames = ns.PlayerFrame.rowFrames
+    check(frames[1].text:GetText():find("MH Poison", 1, true), "dual wield: the hand joins the kind - " .. tostring(frames[1].text:GetText()))
+    check(frames[2].text:GetText():find("OH Poison", 1, true), tostring(frames[2].text:GetText()))
 end)
 
 scenario("fishing lures and unarmed never become a preference", function()

@@ -30,7 +30,7 @@ or unpack a [release zip](https://github.com/ajkatz/AKForeverWeaponBuffs/release
 |---|---|
 | Apply any weapon buff | Starts tracking it for that slot and weapon setup (1H / 2H / dual wield) |
 | Click the big button | Reapplies the most urgent tracked buff (secure button, works in combat) |
-| The row's grey label | slot **and kind**: `MH Imbue` is the weapon spell (Rockbiter, Flametongue, Windfury), `MH Oil` / `Stone` / `Poison` is what was rubbed on. Forever allows an imbue and an oil on one weapon, so a shaman gets both rows; each has its own picker and its own reminder |
+| The row's grey label | the **kind**: `Imbue` is the weapon spell (Rockbiter, Flametongue, Windfury), `Oil` / `Stone` / `Poison` is what was rubbed on. Forever allows an imbue and an oil on one weapon, so a shaman gets both rows; each has its own picker and its own reminder. The hand (`MH`, `OH`, `R`) is added only when more than one hand has rows. A missing or wrong buff says `rebuff` / `wrong` in the timer slot |
 | Click a row's small icon | Picker: *Auto* (follow what I apply), pin a specific buff, or *Don't track*. Its title and the line under it name the row the same way |
 | Right-click a buff in the picker | Forgets a wrongly learned buff |
 | Drag the frame | Moves it (out of combat) |
@@ -77,7 +77,7 @@ only if the names agree (`Windfury Weapon` ~ `Windfury 4`, `Dense Sharpening Sto
 **Dual wield rule.** The game, not the player, picks the hand an imbue lands on, so a cast
 meant for the off hand can overwrite the main hand. While dual wielding, a *spell* landing
 on a hand that already has a different preference does **not** rewrite that preference -
-the row goes red ("Rebuff ...") instead. Change a hand's imbue through the picker. Items
+the row goes red and says "wrong" in its timer slot instead. Change a hand's imbue through the picker. Items
 are aimed at a weapon by hand, so they always follow "last applied".
 
 ## Saved settings on the Forever beta

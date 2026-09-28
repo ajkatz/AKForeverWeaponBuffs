@@ -7,9 +7,10 @@
   the panel said so.
 - Rows say what they are: `MH Imbue` for the weapon spell, `MH Oil` (or Stone, Poison, Lure) for what
   was rubbed on. Forever lets a shaman carry both on one weapon, and two rows both labelled "MH" made
-  it a guess which picker set which. The picker's title and a line under it name the row the same way,
-  and the rows are wider to fit. `/wb show` now says why nothing appeared when there is nothing to
-  track, and names `/wb empty`.
+  it a guess which picker set which. The picker's title and a line under it name the row the same way.
+  The hand letters join the label only when more than one hand has rows, and a missing or wrong buff
+  says `rebuff` / `wrong` in the timer slot, so the rows are no wider than before. `/wb show` now says
+  why nothing appeared when there is nothing to track, and names `/wb empty`.
 
 ## 2.1.1
 

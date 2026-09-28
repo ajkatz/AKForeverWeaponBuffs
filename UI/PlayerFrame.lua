@@ -12,7 +12,7 @@ local PlayerFrame = {}
 ns.PlayerFrame = PlayerFrame
 
 local PAD, BUTTON, GAP = 8, 44, 8
-local ICON, ICON_GAP, BAR_WIDTH, ROW_HEIGHT, ROW_GAP = 18, 4, 200, 18, 3 -- (200: room for "MH Imbue Rebuff Flametongue Weapon")
+local ICON, ICON_GAP, BAR_WIDTH, ROW_HEIGHT, ROW_GAP = 18, 4, 150, 18, 3
 local PLACEHOLDER_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local STATUS_COLORS = {
@@ -254,23 +254,27 @@ local function createRow(index)
     return row
 end
 
-local function renderRow(row, data)
+-- The row's grey label names the KIND - Imbue, Oil, Stone, Poison - because Forever allows an imbue and an
+-- oil on one weapon and "MH" alone named neither row. The hand letters join it only when more than one hand
+-- has rows (dual wield, a ranged weapon): a shaman's two rows are simply "Imbue" and "Oil". A missing or
+-- wrong buff says so in the timer slot, which is empty exactly then - no wider rows for a longer sentence.
+local function renderRow(row, data, showSlots)
     row.data = data
     local color = STATUS_COLORS[data.status] or STATUS_COLORS.INFO
-    -- slot AND kind: with an imbue and an oil both on the main hand, "MH" alone named neither row
-    local label = "|cffaaaaaa" .. data.slot.label .. " " .. ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName) .. "|r "
+    local kind = ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName)
+    local label = "|cffaaaaaa" .. (showSlots and (data.slot.label .. " ") or "") .. kind .. "|r "
     local fraction, text, timeText, icon, desaturate
 
     if data.status == "MISSING" or data.status == "WRONG" then
         fraction = 1
-        text = label .. "Rebuff " .. (data.desiredName or "?")
-        timeText = ""
+        text = label .. (data.desiredName or "?")
+        timeText = data.status == "WRONG" and "|cffff6666wrong|r" or "|cffff6666rebuff|r"
         icon = data.desiredIcon
         desaturate = true
     elseif data.status == "KNIFE" then
         fraction = 1
         text = label .. (data.knifeText or "Equip weapon")
-        timeText = ""
+        timeText = "|cffff6666equip|r"
         icon = data.icon or data.desiredIcon
         desaturate = true
     else
@@ -302,9 +306,15 @@ function PlayerFrame:Refresh()
     local rows, setup = Tracker:BuildRows()
     self.rows, self.setup = rows, setup
 
+    local showSlots = false
+    for _, data in ipairs(rows) do
+        if data.slotKey ~= "MH" then
+            showSlots = true -- more than one hand in play: say which
+        end
+    end
     for index, data in ipairs(rows) do
         rowFrames[index] = rowFrames[index] or createRow(index)
-        renderRow(rowFrames[index], data)
+        renderRow(rowFrames[index], data, showSlots)
     end
     for index = #rows + 1, #rowFrames do
         rowFrames[index].data = nil
