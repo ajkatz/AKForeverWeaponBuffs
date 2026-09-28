@@ -12,7 +12,7 @@ local PlayerFrame = {}
 ns.PlayerFrame = PlayerFrame
 
 local PAD, BUTTON, GAP = 8, 44, 8
-local ICON, ICON_GAP, BAR_WIDTH, ROW_HEIGHT, ROW_GAP = 18, 4, 150, 18, 3
+local ICON, ICON_GAP, BAR_WIDTH, ROW_HEIGHT, ROW_GAP = 18, 4, 200, 18, 3 -- (200: room for "MH Imbue Rebuff Flametongue Weapon")
 local PLACEHOLDER_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local STATUS_COLORS = {
@@ -180,8 +180,12 @@ local function showRowTooltip(pick)
         return
     end
     GameTooltip:SetOwner(pick, "ANCHOR_RIGHT")
-    local typeLabel = ns.Enchants.TYPE_LABELS[data.typeKey] or data.typeKey
-    GameTooltip:SetText(data.slot.name .. " - " .. typeLabel)
+    local kind = ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName)
+    GameTooltip:SetText(data.slot.name .. " - " .. kind)
+    local hint = ns.Enchants:KindHint(data.typeKey)
+    if hint then
+        GameTooltip:AddLine(hint, 0.7, 0.7, 0.7, true)
+    end
     if data.entry then
         local suffix = data.pulsed and " (from a totem or another player)" or ""
         GameTooltip:AddLine("Now: " .. (data.name or "weapon buff") .. suffix, 1, 1, 1, true)
@@ -253,7 +257,8 @@ end
 local function renderRow(row, data)
     row.data = data
     local color = STATUS_COLORS[data.status] or STATUS_COLORS.INFO
-    local label = "|cffaaaaaa" .. data.slot.label .. "|r "
+    -- slot AND kind: with an imbue and an oil both on the main hand, "MH" alone named neither row
+    local label = "|cffaaaaaa" .. data.slot.label .. " " .. ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName) .. "|r "
     local fraction, text, timeText, icon, desaturate
 
     if data.status == "MISSING" or data.status == "WRONG" then

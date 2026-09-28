@@ -34,7 +34,7 @@ local function showIconTooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText(entry.name or ("Weapon buff #" .. entry.enchantID))
     local slot = ns.Enchants.SLOT_BY_KEY[entry.slotKey]
-    GameTooltip:AddLine((slot and slot.name or entry.slotKey) .. " - " .. (ns.Enchants.TYPE_LABELS[entry.typeKey] or entry.typeKey), 1, 1, 1)
+    GameTooltip:AddLine((slot and slot.name or entry.slotKey) .. " - " .. ns.Enchants:KindLabel(entry.typeKey, entry.name), 1, 1, 1)
     if entry.pulsed then
         GameTooltip:AddLine("Pulsed buff from a totem or another player", 0.4, 1, 0.4, true)
     elseif entry.selfApplied then

@@ -8,9 +8,10 @@ local Sources, Tracker = ns.Sources, ns.Tracker
 local Picker = {}
 ns.Picker = Picker
 
-local WIDTH, ENTRY_HEIGHT, PAD = 230, 20, 8
+local WIDTH, ENTRY_HEIGHT, PAD = 260, 20, 8
+local HINT_HEIGHT = 24 -- two short lines under the title saying which of the two rows this is
 
-local frame, catcher, title, footer
+local frame, catcher, title, hint, footer
 local entryButtons = {}
 
 local function close()
@@ -22,7 +23,7 @@ end
 local function createEntry(index)
     local button = CreateFrame("Button", nil, frame)
     button:SetSize(WIDTH - PAD * 2, ENTRY_HEIGHT)
-    button:SetPoint("TOPLEFT", frame, "TOPLEFT", PAD, -(PAD + 16 + (index - 1) * ENTRY_HEIGHT))
+    button:SetPoint("TOPLEFT", frame, "TOPLEFT", PAD, -(PAD + 16 + HINT_HEIGHT + (index - 1) * ENTRY_HEIGHT))
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
 
@@ -91,6 +92,14 @@ local function create()
 
     title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     title:SetPoint("TOPLEFT", frame, "TOPLEFT", PAD, -PAD)
+    Picker.title = title
+
+    hint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    hint:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
+    hint:SetWidth(WIDTH - PAD * 2)
+    hint:SetJustifyH("LEFT")
+    hint:SetWordWrap(true)
+    Picker.hint = hint
 
     footer = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     footer:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", PAD, PAD)
@@ -148,8 +157,9 @@ function Picker:Toggle(row, setup, anchor)
     end
     self.rowKey = row.rowKey
 
-    local typeLabel = ns.Enchants.TYPE_LABELS[row.typeKey] or row.typeKey
-    title:SetText(row.slot.name .. " - " .. typeLabel)
+    local kind = ns.Enchants:KindLabel(row.typeKey, row.name or row.desiredName)
+    title:SetText(row.slot.name .. " - " .. kind)
+    hint:SetText(ns.Enchants:KindHint(row.typeKey) or "")
 
     local options = buildOptions(row, setup)
     for index, option in ipairs(options) do
@@ -169,7 +179,7 @@ function Picker:Toggle(row, setup, anchor)
         entryButtons[index]:Hide()
     end
 
-    frame:SetSize(WIDTH, PAD + 16 + #options * ENTRY_HEIGHT + 6 + 12 + PAD)
+    frame:SetSize(WIDTH, PAD + 16 + HINT_HEIGHT + #options * ENTRY_HEIGHT + 6 + 12 + PAD)
     frame:ClearAllPoints()
     frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
     frame:Show()

@@ -36,6 +36,38 @@ local UNTRACKED_TYPES = { NONE = true, PERMANENT = true }
 Enchants.TYPE_ORDER = { IMBUE = 1, TEMPORARY = 2 }
 Enchants.TYPE_LABELS = { IMBUE = "Imbue", TEMPORARY = "Temporary" }
 
+-- What a row IS, in a word the player uses: the imbue (a shaman's weapon spell) or what was rubbed on -
+-- oil, stone, poison, lure. Forever allows an imbue AND an oil on one weapon, so this word is what tells
+-- the two main-hand rows apart. The temporary kind is named after what is (or was) on the weapon; with
+-- nothing known yet, by the class: a rogue's is a poison, everyone else's an oil.
+-- ("Sharpened +2" and "Weighted +3" are what the tooltip calls a stone's work)
+local TEMPORARY_WORDS = { { "poison", "Poison" }, { "sharpen", "Stone" }, { "weight", "Stone" }, { "stone", "Stone" }, { "lure", "Lure" }, { "oil", "Oil" } }
+
+function Enchants:KindLabel(typeKey, name)
+    if typeKey == "IMBUE" then
+        return "Imbue"
+    elseif typeKey == "TEMPORARY" then
+        local lower = type(name) == "string" and string.lower(name) or ""
+        for _, pair in ipairs(TEMPORARY_WORDS) do
+            if string.find(lower, pair[1], 1, true) then
+                return pair[2]
+            end
+        end
+        return ns.playerClass == "ROGUE" and "Poison" or "Oil"
+    end
+    return self.TYPE_LABELS[typeKey] or typeKey
+end
+
+-- One line that says which of the two rows this is, for tooltips and the picker.
+function Enchants:KindHint(typeKey)
+    if typeKey == "IMBUE" then
+        return "The weapon spell - Rockbiter, Flametongue, Windfury. An oil or stone can sit on the same weapon: that is the other row."
+    elseif typeKey == "TEMPORARY" then
+        return "What is rubbed on the weapon - oils, sharpening stones, poisons. A shaman's imbue is the other row."
+    end
+    return nil
+end
+
 local function typeKeyOf(enchantType)
     if enchantType == nil then
         return "TEMPORARY"

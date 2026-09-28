@@ -30,7 +30,8 @@ or unpack a [release zip](https://github.com/ajkatz/AKForeverWeaponBuffs/release
 |---|---|
 | Apply any weapon buff | Starts tracking it for that slot and weapon setup (1H / 2H / dual wield) |
 | Click the big button | Reapplies the most urgent tracked buff (secure button, works in combat) |
-| Click a row's small icon | Picker: *Auto* (follow what I apply), pin a specific buff, or *Don't track* |
+| The row's grey label | slot **and kind**: `MH Imbue` is the weapon spell (Rockbiter, Flametongue, Windfury), `MH Oil` / `Stone` / `Poison` is what was rubbed on. Forever allows an imbue and an oil on one weapon, so a shaman gets both rows; each has its own picker and its own reminder |
+| Click a row's small icon | Picker: *Auto* (follow what I apply), pin a specific buff, or *Don't track*. Its title and the line under it name the row the same way |
 | Right-click a buff in the picker | Forgets a wrongly learned buff |
 | Drag the frame | Moves it (out of combat) |
 
