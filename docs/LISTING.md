@@ -38,10 +38,10 @@ longer for shamans only.
 - `/wb forget` - forget what was learned; right-click a buff in the picker to forget just that one
 - `/wb comms`, `/wb diag` - what is being shared; a report for bug reports
 
-### Known limitation of the 1.60.1 beta client
+### Saved settings
 
-The beta client writes addon settings on logout but never reads them back, so the frame's position and your
-tracked buffs last until you log out. The addon learns your buffs again the next time you apply them.
+The frame's position and your tracked buffs are saved per character and survive logging out (client build
+1.60.1.70170 of Oct 1 2026 and later).
 
 Source and issues: https://github.com/ajkatz/AKForeverWeaponBuffs
 

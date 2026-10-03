@@ -13,6 +13,16 @@
   The hand letters join the label only when more than one hand has rows, and a missing or wrong buff
   says `rebuff` / `wrong` in the timer slot, so the rows are no wider than before. `/wb show` now says
   why nothing appeared when there is nothing to track, and names `/wb empty`.
+- **Settings follow the character again.** Client build 1.60.1.70170 (Oct 1 2026) moved a character's
+  surname into the realm slot of `UnitName`, so every character started a fresh, empty profile. The profile
+  is now keyed by the full name and the realm (`Purrdee Bubson - ClassicBetaPvE`, the spelling the older
+  builds saved under) and bound at PLAYER_LOGIN, when the client knows the name for sure, so a cold login no
+  longer lands in an `Unknown` profile. Profiles saved under the other spellings are folded into it the
+  first time each character logs in: the long-standing profile keeps its values, the others fill its gaps,
+  and `/wb diag` says what was adopted. The 2.0.1 realm-name merge is part of the same rule.
+- The same client build reads saved settings back again, so "the position and the tracked buffs last until
+  you log out" is history; the saved-settings bridge (`tools/Install-SavedStateBridge.ps1`) is no longer
+  needed and `-Remove` takes it out.
 
 ## 2.1.1
 

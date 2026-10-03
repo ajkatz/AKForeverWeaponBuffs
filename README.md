@@ -82,21 +82,24 @@ are aimed at a weapon by hand, so they always follow "last applied".
 
 ## Saved settings on the Forever beta
 
-The beta client (1.60.1) **writes SavedVariables on logout but never reads them back**
-(verified 2026-09-18: the load counter on disk stayed at 1 across sessions, while the file
-held the right position and tracked buff). Until Blizzard fixes that:
+Everything AKForeverWeaponBuffs saves, per-character data included
+(`AKForeverWeaponBuffsDB.chars["First Last - Realm"]`), lives in one account-wide file. The per-character
+part is keyed by the character's full name and realm and comes back on your next login. Client build
+1.60.1.70170 (Oct 1 2026) reads addon settings back again; it also moved a character's surname into the
+realm slot of `UnitName`, which split profiles for a day. Profiles saved under either spelling, and those
+of a cold login, are folded into one the first time each character logs in. `/wb diag` reports
+`savedStateSource` (`client`, `bridge addon` or `none`) and what was adopted.
+
+The beta builds before that one **wrote SavedVariables on logout but never read them back** (verified
+2026-09-18: the load counter on disk stayed at 1 across sessions, while the file held the right position
+and tracked buff). `tools/Install-SavedStateBridge.ps1` was the workaround: a companion addon,
+`AKForeverWeaponBuffs_SavedState`, whose `.toc` lists the account's `SavedVariables\AKForeverWeaponBuffs.lua`
+through a directory junction, so the client ran the saved file as addon code before AKForeverWeaponBuffs
+loaded (`## OptionalDeps`). It is no longer needed:
 
 ```powershell
-.\tools\Install-SavedStateBridge.ps1            # then restart the game client completely
-.\tools\Install-SavedStateBridge.ps1 -Remove    # once the client loads SavedVariables again
+.\tools\Install-SavedStateBridge.ps1 -Remove    # then restart the game client completely
 ```
-
-It creates a companion addon, `AKForeverWeaponBuffs_SavedState`, whose `.toc` lists the account's
-`SavedVariables\AKForeverWeaponBuffs.lua` through a directory junction. A SavedVariables file is just
-Lua (`AKForeverWeaponBuffsDB = { ... }`), so the client runs it as addon code before AKForeverWeaponBuffs
-loads (`## OptionalDeps`). Everything AKForeverWeaponBuffs saves, per-character data included
-(`AKForeverWeaponBuffsDB.chars["Name - Realm"]`), is in that one account-wide file for exactly this
-reason. `/wb diag` reports `savedStateSource`: `client`, `bridge addon` or `none`.
 
 Never delete the companion folder with `Remove-Item -Recurse` in Windows PowerShell 5.1 -
 it follows junctions and would empty the real SavedVariables folder. Use `-Remove`.
@@ -129,9 +132,8 @@ Run through these, then `/wb diag`, `/reload`, and look at
    arrive after the fight?
 7. Shaman dual wield: which hand does an imbue land on? (Decides whether the
    skinning-knife strategy is still needed.)
-8. ~~Are SavedVariables read back?~~ **No** - confirmed client bug; see "Saved settings on
-   the Forever beta". Still open: does the client follow the bridge's nested junction
-   (`diag.savedStateSource` should say `bridge addon`, `savedVariableLoads` > 1)?
+8. ~~Are SavedVariables read back?~~ **Not before client build 1.60.1.70170; yes since** (Oct 1 2026:
+   every saved report says `savedStateSource = "client"`). See "Saved settings on the Forever beta".
 
 Answered so far from real saved data: shaman imbues are reported as type `Imbue`
 (row `MH:IMBUE`), Rockbiter Weapon is enchant 29 and lasts 60 minutes.

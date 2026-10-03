@@ -241,6 +241,10 @@ function Mock.install(options)
         inCombat = false,
         chatLockdown = false,
         playerName = "Purrdee",
+        surname = nil,          -- a WoW: Forever surname: "Purrdee Bubson"
+        build70170 = false,     -- the surname in the realm slot, as the client does since Oct 1 2026
+        coldLogin = false,      -- no name at all until PLAYER_LOGIN
+        normalizedRealm = true, -- false: no GetNormalizedRealmName(), only the spaced GetRealmName()
         playerClass = options.class or "SHAMAN",
         equipment = {},  -- [invSlot] = itemID
         items = {},      -- [itemID] = { name, equipLoc, classID, subclassID, icon, spellID, count }
@@ -399,23 +403,55 @@ function Mock.install(options)
         local member = state.party[unit]
         return member and member.class, member and member.class
     end
+    -- The player's name as the client gives it: state.surname adds a WoW: Forever surname; state.build70170
+    -- puts it in the realm slot, as the client does since Oct 1 2026 (UnitFullName("player") -> "Purrdee",
+    -- "Bubson"; before: "Purrdee Bubson", "TestRealm"); state.freshLogin: no realm slot yet (a fresh login on
+    -- the older clients: only GetRealmName() knew the realm, spaced); state.coldLogin: no name at all until
+    -- PLAYER_LOGIN.
+    local function playerName()
+        if state.coldLogin then
+            return nil, nil
+        end
+        local name, slot = state.playerName, nil
+        if state.surname and state.build70170 then
+            slot = state.surname
+        else
+            if state.surname then
+                name = name .. " " .. state.surname
+            end
+            if not state.freshLogin then
+                slot = "TestRealm"
+            end
+        end
+        return name, slot
+    end
     G.UnitName = function(unit)
         if unit == "player" then
-            return state.playerName
+            local name, slot = playerName()
+            if state.build70170 then
+                return name, slot
+            end
+            return name
         end
         return state.party[unit] and state.party[unit].name
     end
-    G.GetUnitName = function(unit) return G.UnitName(unit) end
-    -- Like the real client: on a fresh login UnitFullName has no realm yet (only
-    -- GetRealmName works, and it returns the spaced display name); after a /reload
-    -- UnitFullName returns the normalized realm. Tests flip state.freshLogin.
+    G.GetUnitName = function(unit) return (G.UnitName(unit)) end
     G.UnitFullName = function(unit)
+        if unit == "player" then
+            return playerName()
+        end
         if state.freshLogin then
             return G.UnitName(unit), nil
         end
         return G.UnitName(unit), "TestRealm"
     end
     G.GetRealmName = function() return "Test Realm" end
+    G.GetNormalizedRealmName = function()
+        if state.normalizedRealm == false then
+            return nil -- a client without it: the spaced GetRealmName(), squeezed, must do
+        end
+        return "TestRealm"
+    end
     G.UnitExists = function(unit) return unit == "player" or state.party[unit] ~= nil end
     G.IsInGroup = function(category)
         if category == G.LE_PARTY_CATEGORY_INSTANCE then
@@ -439,6 +475,7 @@ function Mock.install(options)
 
     if options.login ~= false then
         Mock.fire("ADDON_LOADED", "AKForeverWeaponBuffs")
+        state.coldLogin = false -- by PLAYER_LOGIN the client knows who you are
         Mock.fire("PLAYER_LOGIN")
         Mock.fire("PLAYER_ENTERING_WORLD", true, false)
     end
