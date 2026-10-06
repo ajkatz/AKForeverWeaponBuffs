@@ -157,10 +157,7 @@ function Diagnostics:Collect()
         pulsed = sanitize(ns.db.pulsed),
         durations = sanitize(ns.db.durations),
         comms = sanitize(ns.Comms.stats),
-        food = sanitize({
-            current = ns.Food.current, locked = ns.Food.locked, lastRead = ns.Food.lastRead, prefs = ns.cdb.food,
-            learned = ns.db.foodBuffs, meals = ns.Food.meals,
-        }),
+        food = sanitize({ current = ns.Food.current, locked = ns.Food.locked, lastRead = ns.Food.lastRead, prefs = ns.cdb.food }),
         roster = sanitize(ns.Comms.roster),
         fixAction = ns.PlayerFrame.action and sanitize({
             kind = ns.PlayerFrame.action.kind,

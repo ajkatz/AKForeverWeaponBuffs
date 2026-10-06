@@ -21,9 +21,8 @@ missing, wrong or about to run out, and puts it back with one click.
 - **One-click reapply, in combat too.** The big button reapplies the most urgent buff to the right hand.
 - **Per weapon setup and per character:** one-hand, two-hand and dual wield each remember their own buffs.
   A small picker pins a buff to a hand or stops tracking it.
-- **Your food buff, beside them.** Eat or drink something that leaves a buff and a Food row joins the weapon
-  rows: the buff, its timer, and a red "rebuff" for half an hour once it has run out. Well Fed is known from
-  the start; every other food or drink buff is learned the first time it follows a meal.
+- **Your food buff, beside them.** Eat something that leaves Well Fed and a Food row joins the weapon rows:
+  the buff, its timer, and a red "rebuff" for half an hour once it has run out. Nothing to set up.
 - **Party sharing.** Everyone running the addon shares their weapon buffs, so a shaman sees who is really
   getting Windfury Totem - and whose own weapon buff is blocking it.
 - **Built not to break things:** the reapply button is Blizzard's own secure button, and nothing protected
@@ -39,7 +38,7 @@ longer for shamans only.
 - `/wb empty` - keep the frame visible while there is nothing to track (handy for placing it)
 - `/wb party` (`up` / `down`) - the party panel and the way it grows
 - `/wb forget` - forget what was learned; right-click a buff in the picker to forget just that one
-- `/wb food` - the food row: what is tracked and known; `on` / `off` start and stop it, `forget` clears what was learned
+- `/wb food` - the food row: what is tracked; `on` / `off` start and stop it
 - `/wb comms`, `/wb diag` - what is being shared; a report for bug reports
 
 ### Saved settings
