@@ -368,6 +368,7 @@ local function initDB()
     db.pulsed = db.pulsed or {}             -- [enchantID] = true for totem style buffs
     db.durations = db.durations or {}       -- [enchantID] = full duration in seconds (largest seen)
     db.itemSpells = db.itemSpells or {}     -- [use spellID] = itemID
+    db.foodBuffs = nil                      -- a 2.2.0 development build learned food buffs; nothing reads the table now
     db.loads = (db.loads or 0) + 1
 
     ns.db = db
