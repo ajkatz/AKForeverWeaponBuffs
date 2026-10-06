@@ -254,6 +254,7 @@ function Mock.install(options)
         bags = {},       -- itemIDs in the backpack
         party = {},      -- [unit] = { name, class }
         aurasBlocked = false,
+        auras = {},      -- { name, spellId, duration, icon, sourceUnit } - the buffs on the player, Mock.setAuras
     }
     local state = Mock.state
 
@@ -367,6 +368,31 @@ function Mock.install(options)
     }
     G.C_SpellBook = {
         IsSpellKnownOrInSpellBook = function(spellID) return (state.spells[spellID] or {}).known or false end,
+    }
+    -- The player's auras as the Forever client gives them: readable out of combat; in a fight a lookup
+    -- raises (measured 2026-09-20). A timed aura runs out for real: it leaves the list when its time is up.
+    G.C_UnitAuras = {
+        GetAuraDataByIndex = function(unit, index, filter)
+            if state.inCombat or state.aurasBlocked then
+                error("Auras cannot be accessed when secret while tainted")
+            end
+            local live = {}
+            for _, aura in ipairs(state.auras or {}) do
+                aura.__appliedAt = aura.__appliedAt or Mock.now
+                if aura.duration == 0 or aura.__appliedAt + aura.duration > Mock.now then
+                    live[#live + 1] = aura
+                end
+            end
+            local aura = live[index]
+            if not aura then
+                return nil
+            end
+            return {
+                name = aura.name, spellId = aura.spellId, duration = aura.duration,
+                expirationTime = aura.duration == 0 and 0 or aura.__appliedAt + aura.duration,
+                icon = aura.icon, sourceUnit = aura.sourceUnit, isHelpful = filter == "HELPFUL", applications = aura.applications or 1,
+            }
+        end,
     }
     G.C_Container = {
         GetContainerNumSlots = function(bag) return bag == 0 and #state.bags or 0 end,
@@ -490,6 +516,12 @@ end
 
 function Mock.cast(spellID)
     Mock.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-3-0-0-0-" .. spellID, spellID)
+end
+
+-- The buffs on the player change: the list is replaced and UNIT_AURA fires (its payload is secret in a fight)
+function Mock.setAuras(list)
+    Mock.state.auras = list
+    Mock.fire("UNIT_AURA", "player", Mock.state.inCombat and Mock.SECRET or { isFullUpdate = true })
 end
 
 function Mock.realPrint(...)

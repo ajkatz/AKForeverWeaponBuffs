@@ -181,6 +181,12 @@ local function showRowTooltip(pick)
         return
     end
     GameTooltip:SetOwner(pick, "ANCHOR_RIGHT")
+    if data.food then
+        ns.Food:FillTooltip(GameTooltip, data)
+        GameTooltip:AddLine("Click to choose what to track", 0.5, 1, 0.5)
+        GameTooltip:Show()
+        return
+    end
     local kind = ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName)
     GameTooltip:SetText(data.slot.name .. " - " .. kind)
     local hint = ns.Enchants:KindHint(data.typeKey)
@@ -262,8 +268,8 @@ end
 local function renderRow(row, data, showSlots)
     row.data = data
     local color = STATUS_COLORS[data.status] or STATUS_COLORS.INFO
-    local kind = ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName)
-    local label = "|cffaaaaaa" .. (showSlots and (data.slot.label .. " ") or "") .. kind .. "|r "
+    local kind = data.food and "Food" or ns.Enchants:KindLabel(data.typeKey, data.name or data.desiredName)
+    local label = "|cffaaaaaa" .. ((showSlots and data.slot.label) and (data.slot.label .. " ") or "") .. kind .. "|r "
     local fraction, text, timeText, icon, desaturate
 
     if data.status == "MISSING" or data.status == "WRONG" then
@@ -315,7 +321,7 @@ function PlayerFrame:Refresh()
 
     local showSlots = false
     for _, data in ipairs(rows) do
-        if data.slotKey ~= "MH" then
+        if data.slotKey ~= "MH" and not data.food then
             showSlots = true -- more than one hand in play: say which
         end
     end
@@ -479,7 +485,7 @@ end
 
 ns:Listen("LOGIN", create)
 
-for _, message in ipairs({ "ENCHANTS_CHANGED", "ENCHANT_APPLIED", "SOURCES_CHANGED", "PREFS_CHANGED", "WEAPONS_CHANGED" }) do
+for _, message in ipairs({ "ENCHANTS_CHANGED", "ENCHANT_APPLIED", "SOURCES_CHANGED", "PREFS_CHANGED", "WEAPONS_CHANGED", "FOOD_CHANGED" }) do
     ns:Listen(message, function()
         PlayerFrame:RequestRefresh()
     end)

@@ -49,7 +49,10 @@ local function createEntry(index)
             return
         end
         if mouseButton == "RightButton" then
-            if option.sourceKey then
+            if option.forget then
+                option.forget()
+                close()
+            elseif option.sourceKey then
                 Sources:Forget(option.sourceKey)
                 close()
             end
@@ -157,11 +160,17 @@ function Picker:Toggle(row, setup, anchor)
     end
     self.rowKey = row.rowKey
 
-    local kind = ns.Enchants:KindLabel(row.typeKey, row.name or row.desiredName)
-    title:SetText(row.slot.name .. " - " .. kind)
-    hint:SetText(ns.Enchants:KindHint(row.typeKey) or "")
-
-    local options = buildOptions(row, setup)
+    local options
+    if row.food then
+        title:SetText("Food")
+        hint:SetText(ns.Food.HINT)
+        options = ns.Food:PickerOptions(row)
+    else
+        local kind = ns.Enchants:KindLabel(row.typeKey, row.name or row.desiredName)
+        title:SetText(row.slot.name .. " - " .. kind)
+        hint:SetText(ns.Enchants:KindHint(row.typeKey) or "")
+        options = buildOptions(row, setup)
+    end
     for index, option in ipairs(options) do
         local button = entryButtons[index] or createEntry(index)
         entryButtons[index] = button

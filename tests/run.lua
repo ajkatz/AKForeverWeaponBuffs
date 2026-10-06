@@ -49,6 +49,10 @@ end
 local WF_SPELL, RB_SPELL, FT_SPELL, SS_SPELL = 8232, 8017, 8024, 1752
 local OIL_ITEM, OIL_SPELL, POTION_ITEM, POTION_SPELL = 20748, 25123, 13446, 17534
 local MACE_2H, AXE_1H, DAGGER_1H, SHIELD, POLE, KNIFE = 1001, 2001, 2002, 3001, 6256, 7005
+-- food and drink: the item, its use spell, and the buff it leaves (a spell of its own)
+local DUMPLINGS, DUMPLINGS_SPELL, WELL_FED, FOOD_CHANNEL = 20452, 24800, 24799, 433
+local RUM, RUM_SPELL, RUM_BUFF = 21151, 25804, 25805
+local ELIXIR, ELIXIR_SPELL, ELIXIR_BUFF = 13452, 17538, 17539
 
 local function fixtures(state)
     state.spells[WF_SPELL] = { name = "Windfury Weapon", icon = 136018, known = true }
@@ -65,6 +69,12 @@ local function fixtures(state)
     state.items[KNIFE] = { name = "Skinning Knife", equipLoc = "INVTYPE_WEAPON", classID = 2, subclassID = 15, icon = 6, count = 0 }
     state.items[OIL_ITEM] = { name = "Brilliant Mana Oil", icon = 134727, spellID = OIL_SPELL, count = 3 }
     state.items[POTION_ITEM] = { name = "Major Healing Potion", icon = 134834, spellID = POTION_SPELL, count = 5 }
+    state.items[DUMPLINGS] = { name = "Smoked Desert Dumplings", icon = 134020, classID = 0, subclassID = 5, spellID = DUMPLINGS_SPELL, count = 5 }
+    state.items[RUM] = { name = "Rumsey Rum Black Label", icon = 132791, classID = 0, subclassID = 5, spellID = RUM_SPELL, count = 2 }
+    state.items[ELIXIR] = { name = "Elixir of the Mongoose", icon = 134811, classID = 0, subclassID = 2, spellID = ELIXIR_SPELL, count = 1 }
+    state.spells[DUMPLINGS_SPELL] = { name = "Food", icon = 134020, known = false }
+    state.spells[RUM_SPELL] = { name = "Rumsey Rum Black Label", icon = 132791, known = false }
+    state.spells[ELIXIR_SPELL] = { name = "Elixir of the Mongoose", icon = 134811, known = false }
 end
 
 local function enchant(enchantType, enchantID, seconds, icon)
@@ -95,6 +105,22 @@ local function imbue(state, spellID, weaponSlot, enchantID, tooltipName, seconds
     state.tooltips[invSlot] = { "Weapon", tooltipName .. " (30 min)" }
     Mock.setEnchants(weaponSlot, { enchant(IMBUE, enchantID, seconds or 1800) })
     Mock.advance(0.5)
+end
+
+-- a buff on the player, as the aura API reports it; cast by the player unless said otherwise
+local function aura(name, spellID, seconds, icon, source)
+    return { name = name, spellId = spellID, duration = seconds, icon = icon or 1, sourceUnit = source or "player" }
+end
+
+-- the picker's entry buttons, in order, by the text they show
+local function pickerEntries()
+    local entries = {}
+    for _, frame in ipairs(Mock.frames) do
+        if frame.option and frame.__parent == AKForeverWeaponBuffsPicker then
+            entries[#entries + 1] = frame
+        end
+    end
+    return entries
 end
 
 local function rowByKey(ns, rowKey)
@@ -505,6 +531,171 @@ scenario("the two main-hand rows say what they are - 'MH Imbue' and 'MH Oil' - a
     frames = ns.PlayerFrame.rowFrames
     check(frames[1].text:GetText():find("MH Poison", 1, true), "dual wield: the hand joins the kind - " .. tostring(frames[1].text:GetText()))
     check(frames[2].text:GetText():find("OH Poison", 1, true), tostring(frames[2].text:GetText()))
+end)
+
+scenario("food: the buff that follows a meal is learned and tracked; the row counts down and says rebuff when it runs out; the button leaves it alone", function()
+    local ns, state = start({ class = "SHAMAN" }, function(s) s.equipment[16] = MACE_2H; s.bags = { DUMPLINGS, RUM, ELIXIR } end)
+    imbue(state, RB_SPELL, 0, 29, "Rockbiter 7")
+    check(not rowByKey(ns, "FOOD"), "no food row before any meal")
+    Mock.cast(DUMPLINGS_SPELL)
+    Mock.setAuras({ aura("Food", FOOD_CHANNEL, 25), aura("Well Fed", WELL_FED, 900, 134020) })
+    Mock.advance(0.5)
+    local row = rowByKey(ns, "FOOD")
+    check(row, "a food row"); equal(row.status, "OK"); equal(row.name, "Well Fed")
+    near(row.remaining, 900, 1); near(row.fullDuration, 900, 1, "the aura says how long it runs in full")
+    check(ns.db.foodBuffs[WELL_FED] and ns.db.foodBuffs[WELL_FED].itemID == DUMPLINGS, "learned from the dumplings")
+    check(ns.cdb.food and ns.cdb.food.track == true, "tracking started by itself")
+    local frames = ns.PlayerFrame.rowFrames
+    check(frames[1].text:GetText():find("Imbue", 1, true) and not frames[1].text:GetText():find("MH", 1, true), "the food row brings no hand letters: " .. tostring(frames[1].text:GetText()))
+    check(frames[2].text:GetText():find("Food", 1, true) and frames[2].text:GetText():find("Well Fed", 1, true), tostring(frames[2].text:GetText()))
+    equal(frames[2].time:GetText(), "15:00")
+    check(ns.PlayerFrame.action and ns.PlayerFrame.action.rowKey == "MH:IMBUE", "the button is for the weapon")
+    Mock.advance(850)
+    equal(rowByKey(ns, "FOOD").status, "LOW")
+    Mock.advance(60)
+    row = rowByKey(ns, "FOOD"); equal(row.status, "MISSING")
+    ns.PlayerFrame:Refresh()
+    check(frames[2].time:GetText():find("rebuff", 1, true), tostring(frames[2].time:GetText()))
+    check(frames[2].text:GetText():find("Well Fed", 1, true), "the missing row names the last food")
+    equal(AKForeverWeaponBuffsFixButton.flash:IsPlaying(), false, "no flash: the button cannot eat for you")
+    check(ns.PlayerFrame.action and ns.PlayerFrame.action.rowKey == "MH:IMBUE", "the button still offers the weapon buff")
+    -- a drink: a second kind of food buff, learned under its own name
+    Mock.cast(RUM_SPELL)
+    Mock.setAuras({ aura("Rumsey Rum Black Label", RUM_BUFF, 900, 132791) })
+    Mock.advance(0.5)
+    row = rowByKey(ns, "FOOD"); equal(row.status, "OK"); equal(row.name, "Rumsey Rum Black Label")
+    check(ns.db.foodBuffs[RUM_BUFF] and ns.db.foodBuffs[RUM_BUFF].itemName == "Rumsey Rum Black Label", "the drink is learned")
+    -- the row's tooltip
+    frames[2].pick.__scripts.OnEnter(frames[2].pick)
+    check(GameTooltip.__text == "Food", "the tooltip is titled Food: " .. tostring(GameTooltip.__text))
+end)
+
+scenario("food: a buff someone else cast is never taken for a meal, one meal teaches one buff, an elixir is not food, and a name can be added by hand", function()
+    local ns = start(nil, function(s) s.bags = { DUMPLINGS, ELIXIR } end)
+    Mock.cast(DUMPLINGS_SPELL)
+    Mock.setAuras({ aura("Power Word: Fortitude", 1243, 1800, 135987, "party1"), aura("Well Fed", WELL_FED, 900, 134020) })
+    Mock.advance(0.5)
+    check(not ns.db.foodBuffs[1243], "Fortitude is not food")
+    check(ns.db.foodBuffs[WELL_FED], "Well Fed is")
+    Mock.cast(ELIXIR_SPELL)
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 900, 134020), aura("Elixir of the Mongoose", ELIXIR_BUFF, 3600, 134811) })
+    Mock.advance(0.5)
+    check(not ns.db.foodBuffs[ELIXIR_BUFF], "an elixir is not a meal, and the meal before it already taught its buff")
+    equal(rowByKey(ns, "FOOD").name, "Well Fed")
+    -- a buff the addon never saw follow a meal, added by hand
+    SlashCmdList.AKFOREVERWEAPONBUFFS("food add Blessed Sunfruit")
+    Mock.setAuras({ aura("Blessed Sunfruit", 18125, 600, 133989) })
+    Mock.advance(0.5)
+    equal(rowByKey(ns, "FOOD").name, "Blessed Sunfruit")
+    -- /wb food reports; /wb food forget clears what was learned and added, Well Fed stays known by name
+    SlashCmdList.AKFOREVERWEAPONBUFFS("food")
+    check(Mock.printed[#Mock.printed - 1]:find("Well Fed", 1, true), "the report names what is known: " .. tostring(Mock.printed[#Mock.printed - 1]))
+    SlashCmdList.AKFOREVERWEAPONBUFFS("food forget")
+    equal(next(ns.db.foodBuffs), nil); equal(next(ns.db.foodNames), nil)
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 900, 134020) })
+    Mock.advance(0.5)
+    equal(rowByKey(ns, "FOOD").name, "Well Fed")
+end)
+
+scenario("food in a fight: the auras are closed, the row counts on from the last look, and after the fight the real list is read again", function()
+    local ns, state = start(nil, function(s) s.bags = { DUMPLINGS } end)
+    Mock.cast(DUMPLINGS_SPELL)
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 100, 134020) })
+    Mock.advance(0.5)
+    equal(rowByKey(ns, "FOOD").status, "OK")
+    Mock.setCombat(true)
+    Mock.fire("UNIT_AURA", "player", Mock.SECRET) -- the payload is secret in a fight: nothing is read, nothing raised
+    Mock.advance(1)
+    equal(ns.Food.locked, "combat")
+    local row = rowByKey(ns, "FOOD"); equal(row.status, "OK"); near(row.remaining, 98.5, 1)
+    Mock.advance(50)
+    equal(rowByKey(ns, "FOOD").status, "LOW", "counting on from the last look")
+    Mock.advance(60)
+    equal(rowByKey(ns, "FOOD").status, "MISSING", "ran out in the fight")
+    equal(ns.PlayerFrame:GetBackdropFrame():IsShown(), true, "the rows are ordinary frames, drawn in the fight")
+    Mock.setCombat(false)
+    Mock.advance(0.6)
+    equal(ns.Food.locked, nil); equal(rowByKey(ns, "FOOD").status, "MISSING")
+    -- a client that refuses the list outside a fight too: the last state is kept, nothing raised
+    state.aurasBlocked = true
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 900, 134020) })
+    Mock.advance(0.5)
+    check(ns.Food.locked and ns.Food.locked:find("error", 1, true), tostring(ns.Food.locked))
+    equal(rowByKey(ns, "FOOD").status, "MISSING")
+    state.aurasBlocked = false
+    Mock.fire("UNIT_AURA", "player", { isFullUpdate = true })
+    Mock.advance(0.5)
+    equal(ns.Food.locked, nil); equal(rowByKey(ns, "FOOD").status, "OK")
+end)
+
+scenario("food: the picker offers auto, the learned foods and don't track; a pinned food flags another as wrong; the greyed row stays; the report knows it and the party does not", function()
+    local ns, state = start({ class = "SHAMAN" }, function(s)
+        s.equipment[16] = MACE_2H
+        s.bags = { DUMPLINGS, RUM }
+        s.party.party1 = { name = "Bob", class = "WARRIOR" } -- in a party: the weapon buffs are broadcast, the food must not be
+    end)
+    Mock.fire("GROUP_ROSTER_UPDATE")
+    Mock.advance(3)
+    imbue(state, WF_SPELL, 0, 283, "Windfury 1")
+    Mock.advance(3)
+    Mock.cast(DUMPLINGS_SPELL)
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 900, 134020) })
+    Mock.advance(0.5)
+    Mock.cast(RUM_SPELL)
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 800, 134020), aura("Rumsey Rum Black Label", RUM_BUFF, 900, 132791) })
+    Mock.advance(0.5)
+    local rows, setup = ns.Tracker:BuildRows()
+    equal(rows[#rows].rowKey, "FOOD", "the food row comes last")
+    equal(rows[#rows].name, "Well Fed", "of two food buffs the one that runs out first is shown")
+    ns.Picker:Toggle(rows[#rows], setup, ns.PlayerFrame.rowFrames[#rows].pick)
+    equal(AKForeverWeaponBuffsPicker:IsShown(), true)
+    equal(ns.Picker.title:GetText(), "Food")
+    check(ns.Picker.hint:GetText():find("Well Fed", 1, true), "the hint: " .. tostring(ns.Picker.hint:GetText()))
+    local entries = pickerEntries()
+    equal(#entries, 4, "auto, two learned foods, don't track")
+    check(entries[1].option.text:find("Auto", 1, true), entries[1].option.text)
+    check(entries[2].option.text:find("Rumsey", 1, true) and entries[3].option.text:find("Well Fed", 1, true), entries[2].option.text .. " / " .. entries[3].option.text)
+    check(entries[3].option.text:find("Dumplings", 1, true), "the learned food names the item: " .. entries[3].option.text)
+    check(entries[4].option.text:find("track", 1, true), entries[4].option.text)
+    -- pin the rum: with the rum on, fine; with Well Fed alone, the wrong food
+    entries[2].__scripts.OnClick(entries[2], "LeftButton")
+    equal(AKForeverWeaponBuffsPicker:IsShown(), false)
+    Mock.advance(0.1)
+    local row = rowByKey(ns, "FOOD"); equal(row.status, "OK"); equal(row.name, "Rumsey Rum Black Label", "pinned: the rum is shown though Well Fed runs out first")
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 800, 134020) })
+    Mock.advance(0.5)
+    row = rowByKey(ns, "FOOD"); equal(row.status, "WRONG"); equal(row.desiredName, "Rumsey Rum Black Label")
+    ns.PlayerFrame:Refresh()
+    check(ns.PlayerFrame.rowFrames[2].time:GetText():find("wrong", 1, true), tostring(ns.PlayerFrame.rowFrames[2].time:GetText()))
+    equal(AKForeverWeaponBuffsFixButton.flash:IsPlaying(), false, "wrong food, still no flash")
+    ns.Food:SetAuto()
+    Mock.advance(0.1)
+    equal(rowByKey(ns, "FOOD").status, "OK")
+    -- don't track: greyed and blue while a buff is on; a placeholder once it is gone; /wb food on brings it back
+    ns.Food:SetNone()
+    Mock.advance(0.1)
+    row = rowByKey(ns, "FOOD"); check(row.untracked, "untracked"); equal(row.status, "INFO")
+    Mock.setAuras({})
+    Mock.advance(0.5)
+    row = rowByKey(ns, "FOOD"); equal(row.status, "UNTRACKED"); check(row.placeholder, "a placeholder: the way back to the picker")
+    SlashCmdList.AKFOREVERWEAPONBUFFS("food on")
+    equal(rowByKey(ns, "FOOD").status, "MISSING")
+    -- right-click in the picker forgets a learned food
+    rows, setup = ns.Tracker:BuildRows()
+    ns.Picker:Toggle(rows[#rows], setup, ns.PlayerFrame.rowFrames[#rows].pick)
+    entries = pickerEntries()
+    check(entries[2].option.text:find("Rumsey", 1, true), entries[2].option.text)
+    entries[2].__scripts.OnClick(entries[2], "RightButton")
+    check(not ns.db.foodBuffs[RUM_BUFF], "forgotten")
+    -- the report has a food section; the party message says nothing of food
+    SlashCmdList.AKFOREVERWEAPONBUFFS("diag")
+    local food = AKForeverWeaponBuffsDB.diag.state.food
+    check(food and food.learned[WELL_FED] and food.prefs.track == true, "the report has the food section")
+    check(ns.Enchants.rows.FOOD == nil, "no food among the enchants")
+    check(#Mock.sent > 0, "something was sent to the party")
+    for _, sent in ipairs(Mock.sent) do
+        check(not sent.text:find("FOOD", 1, true) and not sent.text:find("Well Fed", 1, true), "the party hears nothing of food: " .. sent.text)
+    end
 end)
 
 scenario("fishing lures and unarmed never become a preference", function()

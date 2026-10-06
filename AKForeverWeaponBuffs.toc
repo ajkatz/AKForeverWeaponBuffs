@@ -13,6 +13,7 @@
 Core.lua
 Enchants.lua
 Sources.lua
+Food.lua
 Tracker.lua
 Comms.lua
 UI\PlayerFrame.lua

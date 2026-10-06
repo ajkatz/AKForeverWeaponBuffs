@@ -14,6 +14,9 @@ smooth.*
   you apply it, then reminds you (missing / wrong / under 60s) and offers a one-click reapply.
 - **Party sharing.** Everyone running the addon broadcasts their weapon buffs, so a shaman
   can see who is actually receiving Windfury Totem and whose own buff is blocking it.
+- **Your food buff** beside them: eat or drink something that leaves a buff and a `Food` row appears
+  with its timer; Well Fed is known from the start, every other food or drink buff is learned the first
+  time it follows a meal. No reapply - eating needs you seated and out of a fight.
 - Shaman extra: skinning-knife swap for dual wield imbues. (The shield charge counter was taken out in
   v2.0.3 - parked in `attic/shield-charge-counter`.)
 
@@ -33,9 +36,12 @@ or unpack a [release zip](https://github.com/ajkatz/AKForeverWeaponBuffs/release
 | The row's grey label | the **kind**: `Imbue` is the weapon spell (Rockbiter, Flametongue, Windfury), `Oil` / `Stone` / `Poison` is what was rubbed on. Forever allows an imbue and an oil on one weapon, so a shaman gets both rows; each has its own picker and its own reminder. The hand (`MH`, `OH`, `R`) is added only when more than one hand has rows. A missing or wrong buff says `rebuff` / `wrong` in the timer slot |
 | Click a row's small icon | Picker: *Auto* (follow what I apply), pin a specific buff, or *Don't track*. Its title and the line under it name the row the same way. An untracked slot keeps a greyed row that says "not tracked", so the picker stays within reach; greyed rows alone keep no frame on the screen |
 | Right-click a buff in the picker | Forgets a wrongly learned buff |
+| Eat or drink something with a buff | A `Food` row joins the weapon rows: the buff, its timer, `rebuff` in red once it has run out. Its picker pins one food or stops the tracking; the big button leaves food alone. On this client the buffs cannot be read in a fight, so the row counts on from the last look outside combat |
 | Drag the frame | Moves it (out of combat) |
 
-`/wb` lists commands: `show`, `hide`, `reset`, `party`, `comms`, `comms test`, `forget`, `diag`, `debug`.
+`/wb` lists commands: `show`, `hide`, `reset`, `party`, `comms`, `comms test`, `forget`, `food`, `diag`, `debug`.
+`/wb food` says what is tracked and known; `/wb food on|off` starts and stops the row, `/wb food add <buff
+name>` names a buff the addon never saw follow a meal, `/wb food forget` clears what was learned.
 
 **Party panel** (`/wb party` toggles it, and so does the small **x** in the panel's corner, which tells you
 the command that brings it back): one row per party member *who has sent data* - members
@@ -50,6 +56,7 @@ to you, new rows appear above, nobody's row moves); `/wb party down` is the defa
 Core.lua         events, message bus, saved variables, session log, slash commands
 Enchants.lua     read model over C_Item.GetWeaponEnchantInfo; rows keyed slot:type
 Sources.lua      auto-learn: enchantID -> the spell/item that applies it
+Food.lua         the food buff: read from your auras out of combat, learned from what you eat
 Tracker.lua      desires (auto / pinned / none), row status, fix-action choice
 Comms.lua        party broadcast + roster ("U1^..." / "R1" on prefix WeaponBuffs)
 UI/              PlayerFrame (secure fix button + rows), Picker, PartyPanel
@@ -73,6 +80,11 @@ addon depends on were verified against Blizzard's own UI source for build 1.60.1
 only if the names agree (`Windfury Weapon` ~ `Windfury 4`, `Dense Sharpening Stone` ~
 `Sharpened (+8 Damage)`), and never if it lasts under 60s. Those short ones are *pulsed*
 (totem buffs): shown, shared with the party, never nagged about.
+
+**Food rule.** A buff on you that lasts five minutes or more, cast by you, and turns up within twelve
+seconds of using an item of the Food & Drink kind is learned as a food buff (one meal teaches one buff,
+the first to turn up). "Well Fed" counts by name without any learning. Auras are readable out of combat
+only on this client, so the row is read when a fight ends and counts on from the last reading meanwhile.
 
 **Dual wield rule.** The game, not the player, picks the hand an imbue lands on, so a cast
 meant for the off hand can overwrite the main hand. While dual wielding, a *spell* landing
@@ -132,6 +144,9 @@ Run through these, then `/wb diag`, `/reload`, and look at
    arrive after the fight?
 7. Shaman dual wield: which hand does an imbue land on? (Decides whether the
    skinning-knife strategy is still needed.)
+9. Food: after a meal, does a `Food` row appear with the right buff and timer, and is the food learned
+   (`diag.state.food.learned`)? In a fight, is `diag.state.food.locked` set to `combat` and does the row keep
+   counting? Does Well Fed from a Forever feast count?
 8. ~~Are SavedVariables read back?~~ **Not before client build 1.60.1.70170; yes since** (Oct 1 2026:
    every saved report says `savedStateSource = "client"`). See "Saved settings on the Forever beta".
 

@@ -163,8 +163,17 @@ function Tracker:BuildRows()
         end
     end
 
+    -- the food buff: one row after the weapons, with its status already set (no desire table behind it)
+    local foodRow = ns.Food and ns.Food:Row(now, warnSeconds)
+    if foodRow then
+        rows[#rows + 1] = foodRow
+        byKey[foodRow.rowKey] = foodRow
+    end
+
     for _, row in ipairs(rows) do
-        if row.entry and row.desire then
+        if row.food then
+            -- set by Food
+        elseif row.entry and row.desire then
             if row.source and row.source.key == row.desire.key then
                 row.status = (row.remaining <= warnSeconds) and "LOW" or "OK"
             else
@@ -189,7 +198,8 @@ end
 
 function Tracker:IsUrgent(rows)
     for _, row in ipairs(rows) do
-        if URGENT[row.status] and (row.desire or row.status == "KNIFE") then
+        -- the food row never flashes the button: the button cannot eat for you
+        if not row.food and URGENT[row.status] and (row.desire or row.status == "KNIFE") then
             return true
         end
     end
