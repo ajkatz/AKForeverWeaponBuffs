@@ -11,7 +11,9 @@
 -- something from the bags (an item of the Food & Drink kind) and lasts minutes is a food buff from then
 -- on - Blessed Sunfruit, Rumsey Rum Black Label, a Forever feast. One meal teaches one buff, the first
 -- to turn up. The row cannot re-eat for you: eating needs you seated and out of a fight, so the row says
--- "rebuff" and leaves the meal to you - and the big button never flashes for it.
+-- "rebuff" and leaves the meal to you - and the big button never flashes for it. It says so for half an
+-- hour, then the row leaves until the next meal: a reminder, not a red line for life on a character who
+-- ate one buff food while leveling.
 local _, ns = ...
 
 local Food = {}
@@ -20,6 +22,7 @@ ns.Food = Food
 local MIN_DURATION = 300  -- seconds: a food buff lasts minutes; shorter is the eating itself, or a snack's heal
 local MEAL_WINDOW = 12    -- seconds after a meal in which a new buff is taken for its buff (some foods want ten seconds of eating)
 local REFRESH_EPSILON = 3 -- seconds a timer must jump up to count as re-applied
+local NAG_SECONDS = 1800  -- a buff that ran out is flagged this long, then the row leaves until the next meal
 local MAX_AURAS = 60
 local MEALS_MAX = 6
 local ITEM_CLASS_CONSUMABLE = 0
@@ -48,7 +51,7 @@ local function isFoodBuff(aura)
         return true
     end
     local lower = lowerName(aura.name)
-    return lower ~= nil and (SEED_NAMES[lower] or ns.db.foodNames[lower]) and true or false
+    return lower ~= nil and SEED_NAMES[lower] == true
 end
 
 -- an item you eat or drink: Consumable, of the Food & Drink kind (or the plain kind older data uses)
@@ -192,6 +195,9 @@ function Food:Refresh(reason)
             ns:Fire("PREFS_CHANGED")
         end
         prefs.lastName, prefs.lastIcon, prefs.lastSpellID = current.name, current.icon, current.spellID
+        prefs.ranOutAt = nil
+    elseif previous and ns.cdb.food and not ns.cdb.food.ranOutAt then
+        ns.cdb.food.ranOutAt = time() -- gone before its time: cancelled, or you died
     end
     if changed then
         ns:Log("food_changed", {
@@ -209,7 +215,11 @@ function Food:Row(now, warnSeconds)
     local prefs = ns.cdb.food
     local current = self.current
     if current and current.expiresAt <= now then
-        current = nil -- ran out (in a fight, say): the reading will say so when it can
+        -- ran out (in a fight, say): the reading will say so when it can; the clock on the reminder starts
+        if prefs and not prefs.ranOutAt then
+            prefs.ranOutAt = time() - math.floor(now - current.expiresAt)
+        end
+        current = nil
     end
     if not prefs and not current then
         return nil -- never had one: no row
@@ -237,6 +247,10 @@ function Food:Row(now, warnSeconds)
     row.desiredName = (known and known.name) or (prefs and prefs.lastName) or "food buff"
     row.desiredIcon = (known and known.icon) or (prefs and prefs.lastIcon)
     if not current then
+        prefs.ranOutAt = prefs.ranOutAt or time()
+        if time() - prefs.ranOutAt > NAG_SECONDS then
+            return nil -- flagged long enough: the row leaves until the next meal
+        end
         row.status = "MISSING"
     elseif pinned and current.spellID ~= pinned then
         row.status = "WRONG"
@@ -298,27 +312,12 @@ function Food:ForgetAll()
         ns.db.foodBuffs[spellID] = nil
         count = count + 1
     end
-    for lower in pairs(ns.db.foodNames) do
-        ns.db.foodNames[lower] = nil
-    end
     if ns.cdb.food then
         ns.cdb.food.pinned = nil
     end
     ns:Log("food_forgotten", "all")
     ns:Fire("SOURCES_CHANGED")
     return count
-end
-
--- a buff the addon never saw follow a meal, named by hand: /wb food add <name>
-function Food:AddName(name)
-    local lower = lowerName(name)
-    if not lower or lower == "" then
-        return false
-    end
-    ns.db.foodNames[lower] = true
-    ns:Log("food_name_added", lower)
-    ns:Fire("SOURCES_CHANGED")
-    return true
 end
 
 -- what is known, sorted by name, for the picker and /wb food
@@ -444,8 +443,8 @@ ns:Listen("COMBAT_END", function()
     Food:Refresh("combat end")
 end)
 
-ns:RegisterCommand("food", "the food buff row: /wb food on | off | forget | add <buff name>", function(rest)
-    local word, argument = string.match(rest or "", "^(%S*)%s*(.-)%s*$")
+ns:RegisterCommand("food", "the food buff row: /wb food on | off | forget", function(rest)
+    local word = string.match(rest or "", "^%s*(%S*)")
     word = string.lower(word or "")
     if word == "on" then
         Food:SetAuto()
@@ -455,10 +454,7 @@ ns:RegisterCommand("food", "the food buff row: /wb food on | off | forget | add 
         ns:Print("the food buff is not tracked - |cffffd100/wb food on|r brings it back.")
     elseif word == "forget" then
         local count = Food:ForgetAll()
-        ns:Print("forgot", count, "learned food buffs and every added name; Well Fed is still known by name.")
-    elseif word == "add" and argument ~= "" then
-        Food:AddName(argument)
-        ns:Print("\"" .. argument .. "\" counts as a food buff from now on.")
+        ns:Print("forgot", count, "learned food buffs; Well Fed is still known by name.")
     else
         local saved = ns.cdb.food
         local state
@@ -480,10 +476,7 @@ ns:RegisterCommand("food", "the food buff row: /wb food on | off | forget | add 
         for _, known in ipairs(Food:Learned()) do
             names[#names + 1] = (known.name or "?") .. (known.itemName and (" (" .. known.itemName .. ")") or "")
         end
-        for lower in pairs(ns.db.foodNames) do
-            names[#names + 1] = lower .. " (added)"
-        end
         ns:Print("known:", #names > 0 and table.concat(names, ", ") or "nothing learned yet", "- and Well Fed by name.")
-        ns:Print("|cffffd100/wb food on|r, |cffffd100off|r, |cffffd100forget|r, |cffffd100add <buff name>|r")
+        ns:Print("|cffffd100/wb food on|r, |cffffd100off|r, |cffffd100forget|r")
     end
 end)

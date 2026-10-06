@@ -369,7 +369,6 @@ local function initDB()
     db.durations = db.durations or {}       -- [enchantID] = full duration in seconds (largest seen)
     db.itemSpells = db.itemSpells or {}     -- [use spellID] = itemID
     db.foodBuffs = db.foodBuffs or {}       -- [aura spellID] = { name, icon, itemID, itemName, how }: buffs that followed a meal
-    db.foodNames = db.foodNames or {}       -- [lower-case buff name] = true: counts as food, added by /wb food add
     db.loads = (db.loads or 0) + 1
 
     ns.db = db

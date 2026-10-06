@@ -3,13 +3,13 @@
 ## 2.2.0
 
 - **The food buff, beside the weapon buffs.** Eat or drink something that leaves a buff and a `Food` row
-  joins the weapon rows: the buff's name, its timer, `rebuff` in red once it has run out. Well Fed is
-  known from the start; every other food or drink buff is learned the first time it follows a meal
-  (Blessed Sunfruit, Rumsey Rum Black Label, a Forever feast), and `/wb food add <name>` names one the
-  addon never saw follow a meal. The row's picker pins one food or stops the tracking (`/wb food
-  on|off`); `/wb food` says what is known and `/wb food forget` clears it. The buffs cannot be read in a
-  fight on this client, so the row counts on from the last look outside combat. The big button leaves
-  food alone - eating needs you seated and out of a fight - and the party panel hears nothing of it.
+  joins the weapon rows: the buff's name, its timer, `rebuff` in red once it has run out - for half an
+  hour, then the row leaves until the next meal. Well Fed is known from the start; every other food or
+  drink buff is learned the first time it follows a meal (Blessed Sunfruit, Rumsey Rum Black Label, a
+  Forever feast). The row's picker pins one food or stops the tracking (`/wb food on|off`); `/wb food`
+  says what is known and `/wb food forget` clears it. The buffs cannot be read in a fight on this
+  client, so the row counts on from the last look outside combat. The big button leaves food alone -
+  eating needs you seated and out of a fight - and the party panel hears nothing of it.
 
 ## 2.1.2
 

@@ -36,12 +36,12 @@ or unpack a [release zip](https://github.com/ajkatz/AKForeverWeaponBuffs/release
 | The row's grey label | the **kind**: `Imbue` is the weapon spell (Rockbiter, Flametongue, Windfury), `Oil` / `Stone` / `Poison` is what was rubbed on. Forever allows an imbue and an oil on one weapon, so a shaman gets both rows; each has its own picker and its own reminder. The hand (`MH`, `OH`, `R`) is added only when more than one hand has rows. A missing or wrong buff says `rebuff` / `wrong` in the timer slot |
 | Click a row's small icon | Picker: *Auto* (follow what I apply), pin a specific buff, or *Don't track*. Its title and the line under it name the row the same way. An untracked slot keeps a greyed row that says "not tracked", so the picker stays within reach; greyed rows alone keep no frame on the screen |
 | Right-click a buff in the picker | Forgets a wrongly learned buff |
-| Eat or drink something with a buff | A `Food` row joins the weapon rows: the buff, its timer, `rebuff` in red once it has run out. Its picker pins one food or stops the tracking; the big button leaves food alone. On this client the buffs cannot be read in a fight, so the row counts on from the last look outside combat |
+| Eat or drink something with a buff | A `Food` row joins the weapon rows: the buff, its timer, `rebuff` in red once it has run out - for half an hour, then the row leaves until the next meal. Its picker pins one food or stops the tracking; the big button leaves food alone. On this client the buffs cannot be read in a fight, so the row counts on from the last look outside combat |
 | Drag the frame | Moves it (out of combat) |
 
 `/wb` lists commands: `show`, `hide`, `reset`, `party`, `comms`, `comms test`, `forget`, `food`, `diag`, `debug`.
-`/wb food` says what is tracked and known; `/wb food on|off` starts and stops the row, `/wb food add <buff
-name>` names a buff the addon never saw follow a meal, `/wb food forget` clears what was learned.
+`/wb food` says what is tracked and known; `/wb food on|off` starts and stops the row, `/wb food forget` clears
+what was learned.
 
 **Party panel** (`/wb party` toggles it, and so does the small **x** in the panel's corner, which tells you
 the command that brings it back): one row per party member *who has sent data* - members
@@ -85,6 +85,7 @@ only if the names agree (`Windfury Weapon` ~ `Windfury 4`, `Dense Sharpening Sto
 seconds of using an item of the Food & Drink kind is learned as a food buff (one meal teaches one buff,
 the first to turn up). "Well Fed" counts by name without any learning. Auras are readable out of combat
 only on this client, so the row is read when a fight ends and counts on from the last reading meanwhile.
+A buff that ran out is flagged `rebuff` for half an hour; then the row leaves until the next meal.
 
 **Dual wield rule.** The game, not the player, picks the hand an imbue lands on, so a cast
 meant for the off hand can overwrite the main hand. While dual wielding, a *spell* landing

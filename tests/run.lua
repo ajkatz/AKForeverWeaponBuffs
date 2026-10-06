@@ -559,18 +559,24 @@ scenario("food: the buff that follows a meal is learned and tracked; the row cou
     check(frames[2].text:GetText():find("Well Fed", 1, true), "the missing row names the last food")
     equal(AKForeverWeaponBuffsFixButton.flash:IsPlaying(), false, "no flash: the button cannot eat for you")
     check(ns.PlayerFrame.action and ns.PlayerFrame.action.rowKey == "MH:IMBUE", "the button still offers the weapon buff")
-    -- a drink: a second kind of food buff, learned under its own name
+    check(ns.cdb.food.ranOutAt, "the clock on the reminder runs")
+    Mock.advance(1700)
+    equal(rowByKey(ns, "FOOD").status, "MISSING", "still flagged inside the half hour")
+    Mock.advance(200)
+    check(not rowByKey(ns, "FOOD"), "half an hour of rebuff, then the row leaves until the next meal")
+    -- a drink: a second kind of food buff, learned under its own name; the row is back
     Mock.cast(RUM_SPELL)
     Mock.setAuras({ aura("Rumsey Rum Black Label", RUM_BUFF, 900, 132791) })
     Mock.advance(0.5)
     row = rowByKey(ns, "FOOD"); equal(row.status, "OK"); equal(row.name, "Rumsey Rum Black Label")
     check(ns.db.foodBuffs[RUM_BUFF] and ns.db.foodBuffs[RUM_BUFF].itemName == "Rumsey Rum Black Label", "the drink is learned")
+    check(not ns.cdb.food.ranOutAt, "a buff on you clears the clock")
     -- the row's tooltip
     frames[2].pick.__scripts.OnEnter(frames[2].pick)
     check(GameTooltip.__text == "Food", "the tooltip is titled Food: " .. tostring(GameTooltip.__text))
 end)
 
-scenario("food: a buff someone else cast is never taken for a meal, one meal teaches one buff, an elixir is not food, and a name can be added by hand", function()
+scenario("food: a buff someone else cast is never taken for a meal, one meal teaches one buff, an elixir is not food, and a buff that never followed a meal is not either", function()
     local ns = start(nil, function(s) s.bags = { DUMPLINGS, ELIXIR } end)
     Mock.cast(DUMPLINGS_SPELL)
     Mock.setAuras({ aura("Power Word: Fortitude", 1243, 1800, 135987, "party1"), aura("Well Fed", WELL_FED, 900, 134020) })
@@ -582,16 +588,15 @@ scenario("food: a buff someone else cast is never taken for a meal, one meal tea
     Mock.advance(0.5)
     check(not ns.db.foodBuffs[ELIXIR_BUFF], "an elixir is not a meal, and the meal before it already taught its buff")
     equal(rowByKey(ns, "FOOD").name, "Well Fed")
-    -- a buff the addon never saw follow a meal, added by hand
-    SlashCmdList.AKFOREVERWEAPONBUFFS("food add Blessed Sunfruit")
-    Mock.setAuras({ aura("Blessed Sunfruit", 18125, 600, 133989) })
+    -- a buff that never followed a meal is not food, whatever it is called
+    Mock.setAuras({ aura("Well Fed", WELL_FED, 900, 134020), aura("Blessed Sunfruit", 18125, 600, 133989) })
     Mock.advance(0.5)
-    equal(rowByKey(ns, "FOOD").name, "Blessed Sunfruit")
-    -- /wb food reports; /wb food forget clears what was learned and added, Well Fed stays known by name
+    equal(rowByKey(ns, "FOOD").name, "Well Fed")
+    -- /wb food reports; /wb food forget clears what was learned, Well Fed stays known by name
     SlashCmdList.AKFOREVERWEAPONBUFFS("food")
     check(Mock.printed[#Mock.printed - 1]:find("Well Fed", 1, true), "the report names what is known: " .. tostring(Mock.printed[#Mock.printed - 1]))
     SlashCmdList.AKFOREVERWEAPONBUFFS("food forget")
-    equal(next(ns.db.foodBuffs), nil); equal(next(ns.db.foodNames), nil)
+    equal(next(ns.db.foodBuffs), nil)
     Mock.setAuras({ aura("Well Fed", WELL_FED, 900, 134020) })
     Mock.advance(0.5)
     equal(rowByKey(ns, "FOOD").name, "Well Fed")

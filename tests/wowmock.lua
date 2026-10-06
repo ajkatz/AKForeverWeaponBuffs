@@ -274,6 +274,7 @@ function Mock.install(options)
         end
     end
     G.GetTime = function() return Mock.now end
+    G.time = function() return 1700000000 + math.floor(Mock.now) end -- the wall clock moves with the mock's clock
     G.InCombatLockdown = function() return state.inCombat end
     G.date = os.date
     G.GetBuildInfo = function() return "1.60.1", "69893", "Sep 17 2026", 16001 end

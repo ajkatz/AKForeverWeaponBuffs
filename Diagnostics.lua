@@ -159,7 +159,7 @@ function Diagnostics:Collect()
         comms = sanitize(ns.Comms.stats),
         food = sanitize({
             current = ns.Food.current, locked = ns.Food.locked, lastRead = ns.Food.lastRead, prefs = ns.cdb.food,
-            learned = ns.db.foodBuffs, names = ns.db.foodNames, meals = ns.Food.meals,
+            learned = ns.db.foodBuffs, meals = ns.Food.meals,
         }),
         roster = sanitize(ns.Comms.roster),
         fixAction = ns.PlayerFrame.action and sanitize({
