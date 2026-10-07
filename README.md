@@ -39,7 +39,7 @@ or unpack a [release zip](https://github.com/ajkatz/AKForeverWeaponBuffs/release
 | Eat something that leaves Well Fed | A `Food` row joins the weapon rows: the buff, its timer, `rebuff` in red once it has run out - for half an hour, then the row leaves until the next meal. Its picker stops the tracking; the big button leaves food alone. On this client the buffs cannot be read in a fight, so the row counts on from the last look outside combat |
 | Drag the frame | Moves it (out of combat) |
 
-`/wb` lists commands: `show`, `hide`, `reset`, `party`, `comms`, `comms test`, `forget`, `food`, `diag`, `debug`.
+`/wb` lists commands: `show`, `hide`, `empty`, `reset`, `party`, `comms`, `comms test`, `forget`, `food`, `diag`, `debug`.
 `/wb food` says what is tracked; `/wb food on|off` starts and stops the row.
 
 **Party panel** (`/wb party` toggles it, and so does the small **x** in the panel's corner, which tells you
